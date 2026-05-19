@@ -14,6 +14,7 @@ var (
 	colSelBg   = lipgloss.Color("#1f2233")
 
 	titleStyle  = lipgloss.NewStyle().Bold(true).Foreground(colAccent)
+	cowStyle    = lipgloss.NewStyle().Foreground(colMute)
 	muteStyle   = lipgloss.NewStyle().Foreground(colMute)
 	tabActive   = lipgloss.NewStyle().Bold(true).Foreground(colAccent).Padding(0, 1)
 	tabInactive = lipgloss.NewStyle().Foreground(colMute).Padding(0, 1)

@@ -25,7 +25,7 @@ func (m *Model) View() string {
 		detailW = 20
 	}
 
-	bodyHeight := m.height - 4
+	bodyHeight := m.height - 6
 	if bodyHeight < 5 {
 		bodyHeight = 5
 	}
@@ -47,7 +47,10 @@ func (m *Model) View() string {
 }
 
 func (m *Model) renderHeader() string {
-	left := titleStyle.Render("curral")
+	cow := cowStyle.Render("  ^__^\n  (oo)\\_\n  (__)\\ )")
+	wordmark := titleStyle.Render("curral")
+	left := lipgloss.JoinHorizontal(lipgloss.Center, cow, "  ", wordmark)
+
 	tabs := []string{}
 	for i, p := range m.projects {
 		if i == m.activeProj {
@@ -57,11 +60,14 @@ func (m *Model) renderHeader() string {
 		}
 	}
 	right := strings.Join(tabs, " ")
+
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
 	if gap < 1 {
 		gap = 1
 	}
-	return lipgloss.NewStyle().Padding(0, 1).Render(left + strings.Repeat(" ", gap) + right)
+	rightCol := lipgloss.NewStyle().Render(strings.Repeat(" ", gap) + right)
+	row := lipgloss.JoinHorizontal(lipgloss.Center, left, rightCol)
+	return lipgloss.NewStyle().Padding(0, 1).Render(row)
 }
 
 func (m *Model) renderFooter() string {
