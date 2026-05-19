@@ -47,7 +47,7 @@ func renderRow(s session.Session, st watcher.State, width int) string {
 		nameWidth = 4
 	}
 	name := truncate(s.Name, nameWidth)
-	return fmt.Sprintf("%-*s %s %s", nameWidth, name, dot, muteStyle.Render(label))
+	return fmt.Sprintf("%-*s %s %s", nameWidth, name, dot+" ", muteStyle.Render(label))
 }
 
 func truncate(s string, n int) string {
