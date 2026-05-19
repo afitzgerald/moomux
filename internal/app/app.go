@@ -1,4 +1,4 @@
-// Package app glues config, session store, tmux, iterm and gitwt into a TUI Backend.
+// Package app glues config, session store, tmux, terminal and gitwt into a TUI Backend.
 package app
 
 import (
@@ -10,8 +10,8 @@ import (
 
 	"github.com/erickgnclvs/curral/internal/config"
 	"github.com/erickgnclvs/curral/internal/gitwt"
-	"github.com/erickgnclvs/curral/internal/iterm"
 	"github.com/erickgnclvs/curral/internal/session"
+	"github.com/erickgnclvs/curral/internal/terminal"
 	"github.com/erickgnclvs/curral/internal/tmux"
 )
 
@@ -19,7 +19,7 @@ type App struct {
 	Cfg          *config.Config
 	Store        *session.Store
 	Tmux         *tmux.Client
-	ITerm        *iterm.Client
+	Terminal     terminal.TerminalOpener
 	Git          *gitwt.Client
 	WorktreeRoot string
 }
@@ -61,8 +61,8 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 	if err := a.Tmux.NewSession(tmuxName, wt, "claude"); err != nil {
 		return session.Session{}, fmt.Errorf("tmux new-session: %w", err)
 	}
-	if err := a.ITerm.OpenTab(tmuxName, branch); err != nil {
-		return session.Session{}, fmt.Errorf("iterm open tab: %w", err)
+	if err := a.Terminal.OpenSession(tmuxName, branch); err != nil {
+		return session.Session{}, fmt.Errorf("terminal open: %w", err)
 	}
 
 	s := session.Session{
@@ -94,7 +94,7 @@ func (a *App) OpenSession(id string) error {
 			return err
 		}
 	}
-	return a.ITerm.OpenTab(s.TmuxSession, s.Branch)
+	return a.Terminal.OpenSession(s.TmuxSession, s.Branch)
 }
 
 func (a *App) DeleteSession(id string) error {

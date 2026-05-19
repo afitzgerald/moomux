@@ -11,8 +11,8 @@ import (
 	"github.com/erickgnclvs/curral/internal/app"
 	"github.com/erickgnclvs/curral/internal/config"
 	"github.com/erickgnclvs/curral/internal/gitwt"
-	"github.com/erickgnclvs/curral/internal/iterm"
 	"github.com/erickgnclvs/curral/internal/session"
+	"github.com/erickgnclvs/curral/internal/terminal"
 	"github.com/erickgnclvs/curral/internal/tmux"
 	"github.com/erickgnclvs/curral/internal/tui"
 	"github.com/erickgnclvs/curral/internal/watcher"
@@ -48,7 +48,7 @@ func run() error {
 		Cfg:          cfg,
 		Store:        store,
 		Tmux:         tmux.New(),
-		ITerm:        iterm.New(),
+		Terminal:     terminal.Detect(),
 		Git:          gitwt.New(),
 		WorktreeRoot: app.WorktreeRootDefault(),
 	}
