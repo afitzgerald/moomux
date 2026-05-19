@@ -17,7 +17,7 @@ func (f *fakeRunner) Run(script string) (string, error) {
 func TestOpenTabComposesScript(t *testing.T) {
 	fr := &fakeRunner{}
 	c := &Client{Runner: fr}
-	if err := c.OpenTab("curral-foo"); err != nil {
+	if err := c.OpenTab("curral-foo", "feat/foo"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(fr.script, "tmux attach -t curral-foo") {
@@ -25,5 +25,19 @@ func TestOpenTabComposesScript(t *testing.T) {
 	}
 	if !strings.Contains(fr.script, "iTerm2") {
 		t.Fatalf("script missing iTerm2 target: %s", fr.script)
+	}
+	if !strings.Contains(fr.script, `set name to "feat/foo"`) {
+		t.Fatalf("script missing tab title: %s", fr.script)
+	}
+}
+
+func TestOpenTabOmitsNameWhenTitleEmpty(t *testing.T) {
+	fr := &fakeRunner{}
+	c := &Client{Runner: fr}
+	if err := c.OpenTab("curral-foo", ""); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(fr.script, "set name to") {
+		t.Fatalf("script should not set name when title is empty: %s", fr.script)
 	}
 }
