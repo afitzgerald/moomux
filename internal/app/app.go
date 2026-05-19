@@ -61,7 +61,7 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 	if err := a.Tmux.NewSession(tmuxName, wt, "claude"); err != nil {
 		return session.Session{}, fmt.Errorf("tmux new-session: %w", err)
 	}
-	if err := a.ITerm.OpenTab(tmuxName); err != nil {
+	if err := a.ITerm.OpenTab(tmuxName, branch); err != nil {
 		return session.Session{}, fmt.Errorf("iterm open tab: %w", err)
 	}
 
@@ -94,7 +94,7 @@ func (a *App) OpenSession(id string) error {
 			return err
 		}
 	}
-	return a.ITerm.OpenTab(s.TmuxSession)
+	return a.ITerm.OpenTab(s.TmuxSession, s.Branch)
 }
 
 func (a *App) DeleteSession(id string) error {
