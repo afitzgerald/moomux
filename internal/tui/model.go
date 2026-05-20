@@ -102,6 +102,10 @@ func New(cfg *config.Config, backend Backend, statusCh <-chan watcher.Snapshot, 
 	m.refreshSessions()
 	m.refreshTmuxAlive()
 	m.refreshPrompts()
+	if len(m.projects) == 0 {
+		m.mode = ModeNewProject
+		m.projForm = newProjectForm()
+	}
 	return m
 }
 
