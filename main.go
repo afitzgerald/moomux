@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -42,6 +43,13 @@ func run() error {
 		return fmt.Errorf("load sessions: %w", err)
 	}
 
+	home, _ := os.UserHomeDir()
+	logPath := filepath.Join(home, ".local", "share", "moomux", "moomux.log")
+	if lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+		slog.SetDefault(slog.New(slog.NewTextHandler(lf, &slog.HandlerOptions{Level: slog.LevelDebug})))
+		defer lf.Close()
+	}
+
 	a := &app.App{
 		Cfg:          cfg,
 		CfgPath:      cfgPath,
@@ -54,7 +62,6 @@ func run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	statusCh := make(chan watcher.Snapshot, 4)
-	home, _ := os.UserHomeDir()
 	w := &watcher.Watcher{
 		Dir: filepath.Join(home, ".claude", "sessions"),
 	}

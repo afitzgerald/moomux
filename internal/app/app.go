@@ -3,6 +3,7 @@ package app
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -51,8 +52,11 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 	tmuxName := "moomux-" + name
 	branch := ""
 
+	slog.Info("create session", "project", project, "name", name, "worktree", wt, "branch", branch)
+
 	if proj.IsPlain() {
 		if err := os.MkdirAll(wt, 0o755); err != nil {
+			slog.Error("mkdir session dir failed", "path", wt, "err", err)
 			return session.Session{}, fmt.Errorf("mkdir session dir: %w", err)
 		}
 	} else {
@@ -64,15 +68,21 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 			_ = a.Git.Fetch(proj.Repo, proj.BaseBranch) // best-effort
 		}
 		if err := a.Git.AddWorktree(proj.Repo, wt, branch, proj.BaseBranch); err != nil {
+			slog.Error("git worktree add failed", "repo", proj.Repo, "path", wt, "branch", branch, "err", err)
 			return session.Session{}, fmt.Errorf("git worktree add: %w", err)
 		}
+		slog.Info("worktree added", "path", wt, "branch", branch)
 	}
 	if err := a.Tmux.NewSession(tmuxName, wt, "claude", name); err != nil {
+		slog.Error("tmux new-session failed", "name", tmuxName, "cwd", wt, "err", err)
 		return session.Session{}, fmt.Errorf("tmux new-session: %w", err)
 	}
+	slog.Info("tmux session created", "name", tmuxName)
 	if err := a.Terminal.OpenSession(tmuxName, branch); err != nil {
+		slog.Error("terminal open failed", "tmux_session", tmuxName, "branch", branch, "err", err)
 		return session.Session{}, fmt.Errorf("terminal open: %w", err)
 	}
+	slog.Info("terminal opened", "tmux_session", tmuxName)
 
 	s := session.Session{
 		ID:           session.MakeID(project, name),
@@ -84,6 +94,7 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 		CreatedAt:    time.Now().UTC(),
 	}
 	if err := a.Store.Put(s); err != nil {
+		slog.Error("store put failed", "id", s.ID, "err", err)
 		return s, fmt.Errorf("store: %w", err)
 	}
 	return s, nil
@@ -95,15 +106,24 @@ func (a *App) OpenSession(id string) error {
 		return fmt.Errorf("unknown session %q", id)
 	}
 	has, err := a.Tmux.HasSession(s.TmuxSession)
+	slog.Info("open session", "id", id, "tmux_session", s.TmuxSession, "worktree", s.WorktreePath, "tmux_has_session", has)
 	if err != nil {
+		slog.Error("HasSession error", "id", id, "err", err)
 		return err
 	}
 	if !has {
+		slog.Info("tmux session absent, recreating", "tmux_session", s.TmuxSession, "cwd", s.WorktreePath)
 		if err := a.Tmux.NewSession(s.TmuxSession, s.WorktreePath, "claude", s.Name); err != nil {
+			slog.Error("NewSession failed", "id", id, "tmux_session", s.TmuxSession, "cwd", s.WorktreePath, "err", err)
 			return err
 		}
 	}
-	return a.Terminal.OpenSession(s.TmuxSession, s.Branch)
+	if err := a.Terminal.OpenSession(s.TmuxSession, s.Branch); err != nil {
+		slog.Error("Terminal.OpenSession failed", "id", id, "tmux_session", s.TmuxSession, "branch", s.Branch, "err", err)
+		return err
+	}
+	slog.Info("session opened", "id", id)
+	return nil
 }
 
 // TmuxAlive reports whether the tmux session backing this moomux session
