@@ -1,34 +1,30 @@
-// Package iterm opens iTerm2 tabs that attach to a tmux session.
-package iterm
+package terminal
 
 import (
 	"fmt"
 	"os/exec"
 )
 
-type Runner interface {
+type scriptRunner interface {
 	Run(script string) (string, error)
 }
 
-type execRunner struct{}
+type execScriptRunner struct{}
 
-func (execRunner) Run(script string) (string, error) {
+func (execScriptRunner) Run(script string) (string, error) {
 	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	return string(out), err
 }
 
-func ExecRunner() Runner { return execRunner{} }
-
-type Client struct {
-	Runner Runner
+type itermClient struct {
+	runner scriptRunner
 }
 
-func New() *Client { return &Client{Runner: ExecRunner()} }
+func newITermClient() *itermClient {
+	return &itermClient{runner: execScriptRunner{}}
+}
 
-// OpenTab opens a new iTerm2 tab in the current window and attaches to tmuxSession.
-// If title is non-empty, the tab/session name is set to it so iTerm2 displays the
-// branch (or other meaningful label) instead of the running process name.
-func (c *Client) OpenTab(tmuxSession, title string) error {
+func (c *itermClient) OpenSession(tmuxSession, title string) error {
 	setName := ""
 	if title != "" {
 		setName = fmt.Sprintf("\n\t\t\tset name to \"%s\"", escapeAppleScript(title))
@@ -46,11 +42,10 @@ tell application "iTerm2"
 		end tell
 	end tell
 end tell`, setName, tmuxSession)
-	_, err := c.Runner.Run(script)
+	_, err := c.runner.Run(script)
 	return err
 }
 
-// escapeAppleScript escapes characters that would break a double-quoted AppleScript string.
 func escapeAppleScript(s string) string {
 	out := make([]rune, 0, len(s))
 	for _, r := range s {
