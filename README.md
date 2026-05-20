@@ -1,11 +1,14 @@
 # moomux
 
 ```
- ^__^
- (oo)\________
- (__)\        )\/\
-     ||----w |
-     ||      ||
+ _______________________
+< cowsay goes ai agents >
+ -----------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
 ```
 
 A TUI for managing [Claude Code](https://claude.com/claude-code) agent sessions across git worktrees. Replaces the create / resume / delete workflow of tools like claude-squad, using tmux as the session backend and iTerm2 for tab management.
