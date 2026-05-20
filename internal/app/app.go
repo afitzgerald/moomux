@@ -118,6 +118,7 @@ func (a *App) OpenSession(id string) error {
 			return err
 		}
 	}
+	a.Tmux.ConfigureTitleTracking(s.TmuxSession, s.Name)
 	if err := a.Terminal.OpenSession(s.TmuxSession, s.Name); err != nil {
 		slog.Error("Terminal.OpenSession failed", "id", id, "tmux_session", s.TmuxSession, "name", s.Name, "err", err)
 		return err

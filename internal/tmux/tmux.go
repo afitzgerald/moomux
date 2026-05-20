@@ -68,6 +68,16 @@ func (c *Client) NewSession(name, cwd, cmd, windowName string) error {
 	return nil
 }
 
+// ConfigureTitleTracking ensures the tmux session keeps its window name stable
+// and continuously emits it as the terminal title. Safe to call on existing
+// sessions — idempotent tmux set-option calls never break anything.
+func (c *Client) ConfigureTitleTracking(session, windowName string) {
+	_, _ = c.Runner.Run("rename-window", "-t", session, windowName)
+	_, _ = c.Runner.Run("set-window-option", "-t", session, "automatic-rename", "off")
+	_, _ = c.Runner.Run("set-option", "-t", session, "set-titles", "on")
+	_, _ = c.Runner.Run("set-option", "-t", session, "set-titles-string", "#{window_name}")
+}
+
 func (c *Client) KillSession(name string) error {
 	_, err := c.Runner.Run("kill-session", "-t", name)
 	return err
