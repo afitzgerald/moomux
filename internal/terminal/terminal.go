@@ -22,6 +22,14 @@ func Detect() TerminalOpener {
 		return &windowOpener{binary: "alacritty", args: alacrittyArgs}
 	case os.Getenv("TERM_PROGRAM") == "Apple_Terminal":
 		return &windowOpener{binary: "open", args: terminalAppArgs}
+	case os.Getenv("TILIX_ID") != "":
+		return &windowOpener{binary: "tilix", args: tilixArgs}
+	case os.Getenv("KONSOLE_VERSION") != "":
+		return &windowOpener{binary: "konsole", args: konsoleArgs}
+	case os.Getenv("XTERM_VERSION") != "":
+		return &windowOpener{binary: "xterm", args: xtermArgs}
+	case os.Getenv("VTE_VERSION") != "":
+		return &windowOpener{binary: "gnome-terminal", args: gnomeTerminalArgs}
 	default:
 		return &fallbackOpener{}
 	}

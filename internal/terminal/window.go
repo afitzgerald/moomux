@@ -52,3 +52,34 @@ func alacrittyArgs(title, tmuxSession string) []string {
 func terminalAppArgs(title, tmuxSession string) []string {
 	return []string{"-a", "Terminal"}
 }
+
+func gnomeTerminalArgs(title, tmuxSession string) []string {
+	args := []string{}
+	if title != "" {
+		args = append(args, "--title", title)
+	}
+	args = append(args, "--", "tmux", "attach", "-t", tmuxSession)
+	return args
+}
+
+func konsoleArgs(title, tmuxSession string) []string {
+	args := []string{}
+	if title != "" {
+		args = append(args, "--title", title)
+	}
+	args = append(args, "-e", "tmux", "attach", "-t", tmuxSession)
+	return args
+}
+
+func xtermArgs(title, tmuxSession string) []string {
+	args := []string{}
+	if title != "" {
+		args = append(args, "-title", title)
+	}
+	args = append(args, "-e", "tmux", "attach", "-t", tmuxSession)
+	return args
+}
+
+func tilixArgs(title, tmuxSession string) []string {
+	return []string{"-e", "tmux", "attach", "-t", tmuxSession}
+}

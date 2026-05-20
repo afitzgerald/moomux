@@ -56,6 +56,70 @@ func TestWindowOpenerAlacrittyArgs(t *testing.T) {
 	assertContains(t, fe.args, "feat/bar")
 }
 
+func TestWindowOpenerGnomeTerminalArgs(t *testing.T) {
+	fe := &fakeExec{}
+	w := &windowOpener{binary: "gnome-terminal", args: gnomeTerminalArgs, exec: fe.Command}
+	if err := w.OpenSession("moomux-foo", "feat/bar"); err != nil {
+		t.Fatal(err)
+	}
+	if fe.binary != "gnome-terminal" {
+		t.Fatalf("wrong binary: %s", fe.binary)
+	}
+	assertContains(t, fe.args, "--title")
+	assertContains(t, fe.args, "feat/bar")
+	assertContains(t, fe.args, "--")
+	assertContains(t, fe.args, "tmux")
+	assertContains(t, fe.args, "attach")
+	assertContains(t, fe.args, "-t")
+	assertContains(t, fe.args, "moomux-foo")
+}
+
+func TestWindowOpenerKonsoleArgs(t *testing.T) {
+	fe := &fakeExec{}
+	w := &windowOpener{binary: "konsole", args: konsoleArgs, exec: fe.Command}
+	if err := w.OpenSession("moomux-foo", "feat/bar"); err != nil {
+		t.Fatal(err)
+	}
+	if fe.binary != "konsole" {
+		t.Fatalf("wrong binary: %s", fe.binary)
+	}
+	assertContains(t, fe.args, "--title")
+	assertContains(t, fe.args, "feat/bar")
+	assertContains(t, fe.args, "-e")
+	assertContains(t, fe.args, "tmux")
+	assertContains(t, fe.args, "moomux-foo")
+}
+
+func TestWindowOpenerXtermArgs(t *testing.T) {
+	fe := &fakeExec{}
+	w := &windowOpener{binary: "xterm", args: xtermArgs, exec: fe.Command}
+	if err := w.OpenSession("moomux-foo", "feat/bar"); err != nil {
+		t.Fatal(err)
+	}
+	if fe.binary != "xterm" {
+		t.Fatalf("wrong binary: %s", fe.binary)
+	}
+	assertContains(t, fe.args, "-title")
+	assertContains(t, fe.args, "feat/bar")
+	assertContains(t, fe.args, "-e")
+	assertContains(t, fe.args, "tmux")
+	assertContains(t, fe.args, "moomux-foo")
+}
+
+func TestWindowOpenerTilixArgs(t *testing.T) {
+	fe := &fakeExec{}
+	w := &windowOpener{binary: "tilix", args: tilixArgs, exec: fe.Command}
+	if err := w.OpenSession("moomux-foo", "feat/bar"); err != nil {
+		t.Fatal(err)
+	}
+	if fe.binary != "tilix" {
+		t.Fatalf("wrong binary: %s", fe.binary)
+	}
+	assertContains(t, fe.args, "-e")
+	assertContains(t, fe.args, "tmux")
+	assertContains(t, fe.args, "moomux-foo")
+}
+
 func assertContains(t *testing.T, haystack []string, needle string) {
 	t.Helper()
 	for _, s := range haystack {
