@@ -32,11 +32,6 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("load config %s: %w", cfgPath, err)
 	}
-	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
-		if err := seedExampleConfig(cfgPath); err != nil {
-			return err
-		}
-	}
 
 	store := &session.Store{Path: session.DefaultPath()}
 	if err := store.Load(); err != nil {
@@ -75,19 +70,4 @@ func run() error {
 	}
 	cancel()
 	return nil
-}
-
-func seedExampleConfig(path string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	example := `# moomux configuration
-# Add one [projects.<name>] section per repo you want to manage.
-
-# [projects.eg_system]
-# repo          = "~/Development/eg_system"
-# branch_prefix = "erickgoncalves"   # optional — prepended to branch names
-# base_branch   = "main"
-`
-	return os.WriteFile(path, []byte(example), 0o644)
 }
