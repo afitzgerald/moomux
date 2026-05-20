@@ -11,7 +11,7 @@
                 ||     ||
 ```
 
-A TUI for managing [Claude Code](https://claude.com/claude-code) agent sessions across git worktrees. Replaces the create / resume / delete workflow of tools like claude-squad, using tmux as the session backend and iTerm2 for tab management.
+A TUI for managing [Claude Code](https://claude.com/claude-code) agent sessions across git worktrees. Replaces the create / resume / delete workflow of tools like claude-squad, using tmux as the session backend and your terminal for tab/window management.
 
 Single Go binary. No daemon, no network, no background process.
 
@@ -59,14 +59,32 @@ For each session, moomux:
 
 Status is detected by polling `~/.claude/sessions/*.json` every 2 seconds and matching the session's `cwd` to known worktree paths.
 
+## Supported terminals
+
+moomux auto-detects your terminal from environment variables and opens sessions in a new window/tab. Supported terminals:
+
+| Terminal        | Platform       | Detection              |
+|-----------------|----------------|------------------------|
+| iTerm2          | macOS          | `TERM_PROGRAM=iTerm.app` |
+| Apple Terminal  | macOS          | `TERM_PROGRAM=Apple_Terminal` |
+| Kitty           | macOS / Linux  | `KITTY_WINDOW_ID`      |
+| WezTerm         | macOS / Linux  | `WEZTERM_PANE`         |
+| Alacritty       | macOS / Linux  | `TERM=alacritty`       |
+| GNOME Terminal  | Linux          | `VTE_VERSION`          |
+| Konsole         | Linux          | `KONSOLE_VERSION`      |
+| xterm           | Linux          | `XTERM_VERSION`        |
+| Tilix           | Linux          | `TILIX_ID`             |
+
+If your terminal isn't listed, moomux falls back to printing the `tmux attach` command for you to run manually.
+
 ## Requirements
 
-- macOS (the tab opener uses `osascript` against iTerm2)
+- macOS or Linux
 - Go 1.22+
 - `tmux`
 - `git`
 - `claude` CLI on `$PATH`
-- iTerm2
+- A supported terminal (see below)
 
 ## Install
 
@@ -115,7 +133,7 @@ moomux
 |-----------------|-----------------------------------------|
 | `↑` / `k`       | Move selection up                       |
 | `↓` / `j`       | Move selection down                     |
-| `enter`         | Open session in a new iTerm2 tab        |
+| `enter`         | Open session in a new terminal window   |
 | `n`             | New session (inline form)               |
 | `x`             | Kill session (tmux only, keep worktree) |
 | `d`             | Delete session (confirmation)           |
@@ -143,7 +161,7 @@ moomux
    - `git worktree add <path> -b <branch_prefix>/<name> origin/<base_branch>`
    - `tmux new-session -d -s moomux-<name> -c <worktree>`
    - `tmux send-keys claude Enter`
-   - opens an iTerm2 tab attached to the new tmux session
+   - opens a new terminal window/tab attached to the new tmux session
 
 If `branch_prefix` is unset the branch is named `<name>` directly.
 
@@ -184,7 +202,7 @@ make run                   # build + run
 
 ## Out of scope (v1)
 
-- Linux / Windows terminal openers — iTerm2/macOS only for now
+- Windows terminal openers
 - PR/issue integration
 - Session search / filter
 - Branch ahead/behind status

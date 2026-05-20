@@ -47,9 +47,84 @@ func TestDetectReturnsFallbackForUnknown(t *testing.T) {
 	t.Setenv("KITTY_WINDOW_ID", "")
 	t.Setenv("WEZTERM_PANE", "")
 	t.Setenv("TERM", "")
+	t.Setenv("TILIX_ID", "")
+	t.Setenv("KONSOLE_VERSION", "")
+	t.Setenv("XTERM_VERSION", "")
+	t.Setenv("VTE_VERSION", "")
 	got := Detect()
 	if _, ok := got.(*fallbackOpener); !ok {
 		t.Fatalf("expected *fallbackOpener, got %T", got)
+	}
+}
+
+func TestDetectReturnsWindowOpenerForTilix(t *testing.T) {
+	t.Setenv("TERM_PROGRAM", "")
+	t.Setenv("KITTY_WINDOW_ID", "")
+	t.Setenv("WEZTERM_PANE", "")
+	t.Setenv("TERM", "")
+	t.Setenv("TILIX_ID", "some-id")
+	t.Setenv("VTE_VERSION", "6800")
+	got := Detect()
+	wo, ok := got.(*windowOpener)
+	if !ok {
+		t.Fatalf("expected *windowOpener, got %T", got)
+	}
+	if wo.binary != "tilix" {
+		t.Fatalf("expected tilix binary, got %s", wo.binary)
+	}
+}
+
+func TestDetectReturnsWindowOpenerForKonsole(t *testing.T) {
+	t.Setenv("TERM_PROGRAM", "")
+	t.Setenv("KITTY_WINDOW_ID", "")
+	t.Setenv("WEZTERM_PANE", "")
+	t.Setenv("TERM", "")
+	t.Setenv("TILIX_ID", "")
+	t.Setenv("KONSOLE_VERSION", "210401")
+	got := Detect()
+	wo, ok := got.(*windowOpener)
+	if !ok {
+		t.Fatalf("expected *windowOpener, got %T", got)
+	}
+	if wo.binary != "konsole" {
+		t.Fatalf("expected konsole binary, got %s", wo.binary)
+	}
+}
+
+func TestDetectReturnsWindowOpenerForXterm(t *testing.T) {
+	t.Setenv("TERM_PROGRAM", "")
+	t.Setenv("KITTY_WINDOW_ID", "")
+	t.Setenv("WEZTERM_PANE", "")
+	t.Setenv("TERM", "")
+	t.Setenv("TILIX_ID", "")
+	t.Setenv("KONSOLE_VERSION", "")
+	t.Setenv("XTERM_VERSION", "XTerm(379)")
+	got := Detect()
+	wo, ok := got.(*windowOpener)
+	if !ok {
+		t.Fatalf("expected *windowOpener, got %T", got)
+	}
+	if wo.binary != "xterm" {
+		t.Fatalf("expected xterm binary, got %s", wo.binary)
+	}
+}
+
+func TestDetectReturnsWindowOpenerForGnomeTerminal(t *testing.T) {
+	t.Setenv("TERM_PROGRAM", "")
+	t.Setenv("KITTY_WINDOW_ID", "")
+	t.Setenv("WEZTERM_PANE", "")
+	t.Setenv("TERM", "")
+	t.Setenv("TILIX_ID", "")
+	t.Setenv("KONSOLE_VERSION", "")
+	t.Setenv("XTERM_VERSION", "")
+	t.Setenv("VTE_VERSION", "6800")
+	got := Detect()
+	wo, ok := got.(*windowOpener)
+	if !ok {
+		t.Fatalf("expected *windowOpener, got %T", got)
+	}
+	if wo.binary != "gnome-terminal" {
+		t.Fatalf("expected gnome-terminal binary, got %s", wo.binary)
 	}
 }
 
