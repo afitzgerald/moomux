@@ -18,7 +18,7 @@ func (c *Client) Open(sessions []session.Session) error {
 		return fmt.Errorf("no sessions to tile")
 	}
 
-	_ = c.Tmux.KillWindow(windowName)
+	_ = c.Tmux.KillWindow(windowName) // best-effort: ignore "not found" on first open
 
 	if err := c.Tmux.NewWindow(windowName); err != nil {
 		return fmt.Errorf("new-window: %w", err)

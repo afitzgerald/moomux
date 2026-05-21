@@ -18,6 +18,15 @@ import (
 	"github.com/erickgnclvs/moomux/internal/tmux"
 )
 
+var validSessionName = func(name string) bool {
+	for _, r := range name {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_') {
+			return false
+		}
+	}
+	return len(name) > 0
+}
+
 type App struct {
 	Cfg          *config.Config
 	CfgPath      string
@@ -48,6 +57,10 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 	proj, ok := a.Cfg.Projects[project]
 	if !ok {
 		return session.Session{}, fmt.Errorf("unknown project %q", project)
+	}
+	// only allow safe characters in session names since the name ends up in tmux send-keys
+	if !validSessionName(name) {
+		return session.Session{}, fmt.Errorf("session name must contain only letters, digits, hyphens, and underscores")
 	}
 	wt := filepath.Join(a.WorktreeRoot, project, name)
 	tmuxName := "moomux-" + name
