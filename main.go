@@ -39,10 +39,14 @@ func run() error {
 	}
 
 	home, _ := os.UserHomeDir()
-	logPath := filepath.Join(home, ".local", "share", "moomux", "moomux.log")
+	logDir := filepath.Join(home, ".local", "share", "moomux")
+	_ = os.MkdirAll(logDir, 0o755)
+	logPath := filepath.Join(logDir, "moomux.log")
 	if lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
 		slog.SetDefault(slog.New(slog.NewTextHandler(lf, &slog.HandlerOptions{Level: slog.LevelDebug})))
 		defer lf.Close()
+	} else {
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError})))
 	}
 
 	a := &app.App{
