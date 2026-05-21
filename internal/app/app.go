@@ -27,9 +27,33 @@ type App struct {
 	WorktreeRoot string
 }
 
+// agentCmd returns the CLI binary name for the given agent.
+func agentCmd(agent string) string {
+	switch agent {
+	case "codex":
+		return "codex"
+	case "opencode":
+		return "opencode"
+	default:
+		return "claude"
+	}
+}
+
 func WorktreeRootDefault() string {
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".local", "share", "moomux", "worktrees")
+}
+
+// nextOpenCodePort returns the next available port for an OpenCode session.
+// Starts at 4096 and increments past any port already in use by existing OpenCode sessions.
+func (a *App) nextOpenCodePort() int {
+	port := 4096
+	for _, s := range a.Store.All() {
+		if s.AgentName() == "opencode" && s.AgentPort >= port {
+			port = s.AgentPort + 1
+		}
+	}
+	return port
 }
 
 func (a *App) Projects() []string {
@@ -73,7 +97,15 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 		}
 		slog.Info("worktree added", "path", wt, "branch", branch)
 	}
-	if err := a.Tmux.NewSession(tmuxName, wt, "claude", name); err != nil {
+	agent := proj.AgentName()
+	cmd := agentCmd(agent)
+	agentPort := 0
+	if agent == "opencode" {
+		agentPort = a.nextOpenCodePort()
+		cmd = fmt.Sprintf("opencode --port %d", agentPort)
+	}
+
+	if err := a.Tmux.NewSession(tmuxName, wt, cmd, name); err != nil {
 		slog.Error("tmux new-session failed", "name", tmuxName, "cwd", wt, "err", err)
 		return session.Session{}, fmt.Errorf("tmux new-session: %w", err)
 	}
@@ -92,6 +124,8 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 		WorktreePath: wt,
 		TmuxSession:  tmuxName,
 		CreatedAt:    time.Now().UTC(),
+		Agent:        agent,
+		AgentPort:    agentPort,
 	}
 	if err := a.Store.Put(s); err != nil {
 		slog.Error("store put failed", "id", s.ID, "err", err)
@@ -113,7 +147,11 @@ func (a *App) OpenSession(id string) error {
 	}
 	if !has {
 		slog.Info("tmux session absent, recreating", "tmux_session", s.TmuxSession, "cwd", s.WorktreePath)
-		if err := a.Tmux.NewSession(s.TmuxSession, s.WorktreePath, "claude", s.Name); err != nil {
+		cmd := agentCmd(s.AgentName())
+		if s.AgentName() == "opencode" && s.AgentPort > 0 {
+			cmd = fmt.Sprintf("opencode --port %d", s.AgentPort)
+		}
+		if err := a.Tmux.NewSession(s.TmuxSession, s.WorktreePath, cmd, s.Name); err != nil {
 			slog.Error("NewSession failed", "id", id, "tmux_session", s.TmuxSession, "cwd", s.WorktreePath, "err", err)
 			return err
 		}
