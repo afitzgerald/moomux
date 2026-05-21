@@ -95,3 +95,38 @@ func TestSaveRoundtrip(t *testing.T) {
 		t.Fatalf("repo = %q", got.Projects["a"].Repo)
 	}
 }
+
+func TestProjectAgentNameDefaultsToClaude(t *testing.T) {
+	p := Project{}
+	if got := p.AgentName(); got != "claude" {
+		t.Fatalf("expected claude, got %q", got)
+	}
+}
+
+func TestProjectAgentNameReturnsSetValue(t *testing.T) {
+	tests := []string{"codex", "opencode"}
+	for _, agent := range tests {
+		p := Project{Agent: agent}
+		if got := p.AgentName(); got != agent {
+			t.Fatalf("expected %q, got %q", agent, got)
+		}
+	}
+}
+
+func TestProjectAgentRoundtrip(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.toml")
+	cfg := &Config{Projects: map[string]Project{
+		"codex_proj": {Repo: "/tmp/codex", Agent: "codex", BaseBranch: "main"},
+	}}
+	if err := Save(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Projects["codex_proj"].Agent != "codex" {
+		t.Fatalf("Agent = %q", got.Projects["codex_proj"].Agent)
+	}
+}

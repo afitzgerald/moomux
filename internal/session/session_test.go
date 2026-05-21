@@ -81,3 +81,57 @@ func TestMakeID(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestSessionAgentNameDefaultsToClaude(t *testing.T) {
+	s := Session{}
+	if got := s.AgentName(); got != "claude" {
+		t.Fatalf("expected claude, got %q", got)
+	}
+}
+
+func TestSessionAgentNameReturnsSetValue(t *testing.T) {
+	tests := []string{"codex", "opencode"}
+	for _, agent := range tests {
+		s := Session{Agent: agent}
+		if got := s.AgentName(); got != agent {
+			t.Fatalf("expected %q, got %q", agent, got)
+		}
+	}
+}
+
+func TestSessionAgentPortRoundtrip(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sessions.json")
+
+	s := &Store{Path: path}
+	if err := s.Load(); err != nil {
+		t.Fatalf("load empty: %v", err)
+	}
+
+	sess := Session{
+		ID:        "eg:hash",
+		Project:   "eg",
+		Name:      "hash",
+		CreatedAt: time.Now(),
+		Agent:     "opencode",
+		AgentPort: 8080,
+	}
+	if err := s.Put(sess); err != nil {
+		t.Fatal(err)
+	}
+
+	s2 := &Store{Path: path}
+	if err := s2.Load(); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := s2.Get("eg:hash")
+	if !ok {
+		t.Fatalf("missing after reload")
+	}
+	if got.Agent != "opencode" {
+		t.Fatalf("Agent = %q", got.Agent)
+	}
+	if got.AgentPort != 8080 {
+		t.Fatalf("AgentPort = %d", got.AgentPort)
+	}
+}
