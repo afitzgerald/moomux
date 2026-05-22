@@ -67,16 +67,19 @@ func (a *App) Projects() []string {
 
 func (a *App) Sessions() []session.Session { return a.Store.All() }
 
-func (a *App) CreateSession(project, name string) (session.Session, error) {
+func (a *App) CreateSession(project, name, agent string) (session.Session, error) {
 	proj, ok := a.Cfg.Projects[project]
 	if !ok {
 		return session.Session{}, fmt.Errorf("unknown project %q", project)
+	}
+	if agent == "" {
+		agent = proj.AgentName()
 	}
 	wt := filepath.Join(a.WorktreeRoot, project, name)
 	tmuxName := "moomux-" + name
 	branch := ""
 
-	slog.Info("create session", "project", project, "name", name, "worktree", wt, "branch", branch)
+	slog.Info("create session", "project", project, "name", name, "agent", agent, "worktree", wt, "branch", branch)
 
 	if proj.IsPlain() {
 		if err := os.MkdirAll(wt, 0o755); err != nil {
@@ -97,7 +100,6 @@ func (a *App) CreateSession(project, name string) (session.Session, error) {
 		}
 		slog.Info("worktree added", "path", wt, "branch", branch)
 	}
-	agent := proj.AgentName()
 	cmd := agentCmd(agent)
 	agentPort := 0
 	if agent == "opencode" {
