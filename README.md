@@ -83,7 +83,7 @@ If your terminal isn't listed, moomux falls back to printing the `tmux attach` c
 - Go 1.22+
 - `tmux`
 - `git`
-- `claude` CLI on `$PATH`
+- `claude` CLI on `$PATH` (or `codex` / `opencode`, depending on your project config)
 - A supported terminal (see below)
 
 ## Install
@@ -105,6 +105,7 @@ First run creates `~/.config/moomux/config.toml` with a commented example. Edit 
 repo          = "~/Development/project1"
 branch_prefix = "erick"   # optional — prepended to the branch name
 base_branch   = "main"
+agent         = "claude"  # optional — "claude" (default), "codex", or "opencode"
 
 [projects.other_repo]
 repo        = "~/Development/other_repo"
@@ -207,7 +208,8 @@ make run                   # build + run
 - Session search / filter
 - Branch ahead/behind status
 - Multiple Claude instances per session
-- Other agents different than Claude
+- Gemini CLI agent support (planned)
+- Per-session agent override (agent is set per-project)
 
 ## License
 

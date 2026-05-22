@@ -12,13 +12,22 @@ import (
 )
 
 type Project struct {
-	Kind         string `toml:"kind,omitempty"` // "git" (default) or "plain"
+	Kind         string `toml:"kind,omitempty"`         // "git" (default) or "plain"
 	Repo         string `toml:"repo"`
 	BranchPrefix string `toml:"branch_prefix,omitempty"`
 	BaseBranch   string `toml:"base_branch,omitempty"`
+	Agent        string `toml:"agent,omitempty"`         // "claude" (default), "codex", "opencode"
 }
 
 func (p Project) IsPlain() bool { return p.Kind == "plain" }
+
+// AgentName returns the effective agent name, defaulting to "claude".
+func (p Project) AgentName() string {
+	if p.Agent == "" {
+		return "claude"
+	}
+	return p.Agent
+}
 
 type Config struct {
 	Projects map[string]Project `toml:"projects"`

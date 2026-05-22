@@ -20,6 +20,16 @@ type Session struct {
 	WorktreePath string    `json:"worktree_path"`
 	TmuxSession  string    `json:"tmux_session"`
 	CreatedAt    time.Time `json:"created_at"`
+	Agent        string    `json:"agent,omitempty"`      // "claude", "codex", "opencode"; empty = "claude"
+	AgentPort    int       `json:"agent_port,omitempty"` // HTTP port for OpenCode API; 0 = not applicable
+}
+
+// AgentName returns the effective agent name, defaulting to "claude" for legacy sessions.
+func (s Session) AgentName() string {
+	if s.Agent == "" {
+		return "claude"
+	}
+	return s.Agent
 }
 
 type fileShape struct {

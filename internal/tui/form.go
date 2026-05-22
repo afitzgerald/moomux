@@ -3,6 +3,8 @@ package tui
 import (
 	"fmt"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m *Model) renderNewForm() string {
@@ -31,12 +33,34 @@ func (m *Model) renderNewProject() string {
 		b.WriteString(ti.View())
 		b.WriteString("\n")
 	}
-	b.WriteString("\n")
+	b.WriteString(muteStyle.Render(fmt.Sprintf("%-15s", "agent:")))
+	b.WriteString(m.renderAgentSelector())
+	b.WriteString("\n\n")
 	if m.projForm.err != "" {
 		b.WriteString(dangerStyle.Render(m.projForm.err))
 		b.WriteString("\n\n")
 	}
-	b.WriteString(muteStyle.Render("tab/↑↓ to move   enter to save   esc to cancel"))
+	b.WriteString(muteStyle.Render("tab/↑↓ to move   ←→ to pick agent   enter to save   esc to cancel"))
+	return b.String()
+}
+
+func (m *Model) renderAgentSelector() string {
+	focused := m.projForm.focus == projFormInputCount
+	var b strings.Builder
+	for i, a := range agentChoices {
+		if i > 0 {
+			b.WriteString("  ")
+		}
+		if i == m.projForm.agentIdx {
+			if focused {
+				b.WriteString(titleStyle.Render("[" + a + "]"))
+			} else {
+				b.WriteString(lipgloss.NewStyle().Bold(true).Render("[" + a + "]"))
+			}
+		} else {
+			b.WriteString(muteStyle.Render(a))
+		}
+	}
 	return b.String()
 }
 

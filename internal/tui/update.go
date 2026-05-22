@@ -203,20 +203,39 @@ func (m *Model) updateConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateNewProject(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	const totalFields = projFormInputCount + 1 // +1 for agent selector
 	switch msg.String() {
 	case "esc":
 		m.mode = ModeList
 		return m, nil
 	case "tab", "down":
-		m.projForm.inputs[m.projForm.focus].Blur()
-		m.projForm.focus = (m.projForm.focus + 1) % len(m.projForm.inputs)
-		m.projForm.inputs[m.projForm.focus].Focus()
+		if m.projForm.focus < projFormInputCount {
+			m.projForm.inputs[m.projForm.focus].Blur()
+		}
+		m.projForm.focus = (m.projForm.focus + 1) % totalFields
+		if m.projForm.focus < projFormInputCount {
+			m.projForm.inputs[m.projForm.focus].Focus()
+		}
 		return m, nil
 	case "shift+tab", "up":
-		m.projForm.inputs[m.projForm.focus].Blur()
-		m.projForm.focus = (m.projForm.focus - 1 + len(m.projForm.inputs)) % len(m.projForm.inputs)
-		m.projForm.inputs[m.projForm.focus].Focus()
+		if m.projForm.focus < projFormInputCount {
+			m.projForm.inputs[m.projForm.focus].Blur()
+		}
+		m.projForm.focus = (m.projForm.focus - 1 + totalFields) % totalFields
+		if m.projForm.focus < projFormInputCount {
+			m.projForm.inputs[m.projForm.focus].Focus()
+		}
 		return m, nil
+	case "left":
+		if m.projForm.focus == projFormInputCount {
+			m.projForm.agentIdx = (m.projForm.agentIdx - 1 + len(agentChoices)) % len(agentChoices)
+			return m, nil
+		}
+	case "right":
+		if m.projForm.focus == projFormInputCount {
+			m.projForm.agentIdx = (m.projForm.agentIdx + 1) % len(agentChoices)
+			return m, nil
+		}
 	case "enter":
 		name := m.projForm.inputs[0].Value()
 		repo := m.projForm.inputs[1].Value()
@@ -225,7 +244,8 @@ func (m *Model) updateNewProject(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if base == "" {
 			base = "main"
 		}
-		p := config.Project{Repo: repo, BaseBranch: base, BranchPrefix: prefix}
+		agent := agentChoices[m.projForm.agentIdx]
+		p := config.Project{Repo: repo, BaseBranch: base, BranchPrefix: prefix, Agent: agent}
 		err := m.backend.AddProject(name, p)
 		if err == nil {
 			m.activateProject(name)
@@ -242,9 +262,12 @@ func (m *Model) updateNewProject(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.projForm.err = err.Error()
 		return m, nil
 	}
-	var cmd tea.Cmd
-	m.projForm.inputs[m.projForm.focus], cmd = m.projForm.inputs[m.projForm.focus].Update(msg)
-	return m, cmd
+	if m.projForm.focus < projFormInputCount {
+		var cmd tea.Cmd
+		m.projForm.inputs[m.projForm.focus], cmd = m.projForm.inputs[m.projForm.focus].Update(msg)
+		return m, cmd
+	}
+	return m, nil
 }
 
 func (m *Model) activateProject(name string) {
