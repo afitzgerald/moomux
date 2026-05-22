@@ -19,7 +19,25 @@ func (m *Model) renderNewForm() string {
 	b.WriteString("\n\n")
 	b.WriteString(m.nameInput.View())
 	b.WriteString("\n\n")
-	b.WriteString(muteStyle.Render("enter to create   esc to cancel"))
+	b.WriteString(muteStyle.Render("agent:  "))
+	b.WriteString(m.renderNewFormAgentSelector())
+	b.WriteString("\n\n")
+	b.WriteString(muteStyle.Render("←→ to pick agent   enter to create   esc to cancel"))
+	return b.String()
+}
+
+func (m *Model) renderNewFormAgentSelector() string {
+	var b strings.Builder
+	for i, a := range agentChoices {
+		if i > 0 {
+			b.WriteString("  ")
+		}
+		if i == m.newFormAgentIdx {
+			b.WriteString(titleStyle.Render("[" + a + "]"))
+		} else {
+			b.WriteString(muteStyle.Render(a))
+		}
+	}
 	return b.String()
 }
 

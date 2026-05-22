@@ -18,7 +18,7 @@ import (
 // Backend is everything the TUI calls into. main wires the real impl;
 // tests can supply fakes.
 type Backend interface {
-	CreateSession(project, name string) (session.Session, error)
+	CreateSession(project, name, agent string) (session.Session, error)
 	OpenSession(id string) error
 	DeleteSession(id string) error
 	KillTmux(id string) error
@@ -75,9 +75,10 @@ type Model struct {
 	statusCh   <-chan watcher.Snapshot
 	cancelPoll context.CancelFunc
 
-	mode      Mode
-	nameInput textinput.Model
-	projForm  projectForm
+	mode             Mode
+	nameInput        textinput.Model
+	newFormAgentIdx  int // agent selector in the new-session form
+	projForm         projectForm
 	pending   pendingProject
 	flash     string
 	flashTime time.Time

@@ -126,6 +126,19 @@ func (m *Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = ModeNewForm
 		m.nameInput.SetValue("")
 		m.nameInput.Focus()
+		// pre-select the project's default agent
+		proj := m.projects[m.activeProj]
+		defaultAgent := "claude"
+		if p, ok := m.cfg.Projects[proj]; ok {
+			defaultAgent = p.AgentName()
+		}
+		m.newFormAgentIdx = 0
+		for i, a := range agentChoices {
+			if a == defaultAgent {
+				m.newFormAgentIdx = i
+				break
+			}
+		}
 	case key.Matches(msg, m.keys.Delete):
 		if len(m.sessions) > 0 {
 			m.mode = ModeConfirmDelete
@@ -159,17 +172,24 @@ func (m *Model) updateNewForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc":
 		m.mode = ModeList
 		return m, nil
+	case "left":
+		m.newFormAgentIdx = (m.newFormAgentIdx - 1 + len(agentChoices)) % len(agentChoices)
+		return m, nil
+	case "right":
+		m.newFormAgentIdx = (m.newFormAgentIdx + 1) % len(agentChoices)
+		return m, nil
 	case "enter":
 		name := m.nameInput.Value()
 		if name == "" {
 			return m, nil
 		}
 		proj := m.projects[m.activeProj]
+		agent := agentChoices[m.newFormAgentIdx]
 		m.mode = ModeList
 		m.flash = "creating " + name + "…"
 		m.flashTime = time.Now()
 		return m, func() tea.Msg {
-			s, err := m.backend.CreateSession(proj, name)
+			s, err := m.backend.CreateSession(proj, name, agent)
 			if err != nil {
 				return ErrorMsg{Err: err}
 			}
