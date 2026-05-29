@@ -1,3 +1,5 @@
+
+
 # moomux
 
 ```
@@ -47,6 +49,22 @@ Single Go binary. No daemon, no network, no background process.
 │                                                     P:+project  D:-project  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## Demo
+
+https://github.com/user-attachments/assets/6a3aec4e-6c30-4cdf-89fa-fdadf02c6f3a
+
+
+## What it does
+
+For each session, moomux:
+
+1. Creates a git worktree on a new branch off your base branch
+2. Starts a detached tmux session in that worktree
+3. Launches `claude` inside it
+4. Opens an iTerm2 tab attached to the tmux session
+
+Status is detected by polling `~/.claude/sessions/*.json` every 2 seconds and matching the session's `cwd` to known worktree paths.
 
 ## Requirements
 
