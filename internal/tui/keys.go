@@ -11,6 +11,7 @@ type KeyMap struct {
 	Kill       key.Binding
 	Refresh    key.Binding
 	Tab        key.Binding
+	ShiftTab   key.Binding
 	Quit       key.Binding
 	Cancel     key.Binding
 	Confirm    key.Binding
@@ -20,16 +21,17 @@ type KeyMap struct {
 
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		Up:      key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
-		Down:    key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
-		Open:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "open")),
-		New:     key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
-		Delete:  key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
-		Kill:    key.NewBinding(key.WithKeys("x"), key.WithHelp("x", "kill tmux")),
-		Refresh: key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "refresh")),
-		Tab:     key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "project")),
-		Quit:    key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
-		Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+		Up:         key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+		Down:       key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+		Open:       key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "open")),
+		New:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
+		Delete:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
+		Kill:       key.NewBinding(key.WithKeys("x"), key.WithHelp("x", "park")),
+		Refresh:    key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "refresh")),
+		Tab:        key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next project")),
+		ShiftTab:   key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev project")),
+		Quit:       key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+		Cancel:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 		Confirm:    key.NewBinding(key.WithKeys("y"), key.WithHelp("y", "confirm")),
 		NewProject: key.NewBinding(key.WithKeys("P"), key.WithHelp("P", "add project")),
 		DelProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "remove project")),
