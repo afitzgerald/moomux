@@ -67,10 +67,55 @@ func (a *App) Projects() []string {
 
 func (a *App) Sessions() []session.Session { return a.Store.All() }
 
-func (a *App) CreateSession(project, name, agent string) (session.Session, string, error) {
+// deriveNameFromBranch turns a branch name like "feature/login-page" into a
+// filesystem/tmux-safe session name like "login-page".
+func deriveNameFromBranch(branch string) string {
+	name := branch
+	if i := strings.LastIndex(name, "/"); i >= 0 {
+		name = name[i+1:]
+	}
+	var b strings.Builder
+	for _, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('-')
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if out == "" {
+		out = "session"
+	}
+	return out
+}
+
+// uniqueNameFromBranch derives a session name from branch and, if it already
+// collides with an existing session in project, appends -2, -3, ... until free.
+func (a *App) uniqueNameFromBranch(project, branch string) string {
+	base := deriveNameFromBranch(branch)
+	name := base
+	for i := 2; ; i++ {
+		if _, ok := a.Store.Get(session.MakeID(project, name)); !ok {
+			return name
+		}
+		name = fmt.Sprintf("%s-%d", base, i)
+	}
+}
+
+// CreateSession's hint, when non-empty, is a user-facing instruction
+// (e.g. "run: tmux attach -t ...") to show alongside success — it is
+// not an error.
+func (a *App) CreateSession(project, name, agent, existingBranch string) (session.Session, string, error) {
 	proj, ok := a.Cfg.Projects[project]
 	if !ok {
 		return session.Session{}, "", fmt.Errorf("unknown project %q", project)
+	}
+	if name == "" {
+		if existingBranch == "" {
+			return session.Session{}, "", fmt.Errorf("session name required")
+		}
+		name = a.uniqueNameFromBranch(project, existingBranch)
 	}
 	if agent == "" {
 		agent = proj.AgentName()
@@ -79,7 +124,7 @@ func (a *App) CreateSession(project, name, agent string) (session.Session, strin
 	tmuxName := "moomux-" + name
 	branch := ""
 
-	slog.Info("create session", "project", project, "name", name, "agent", agent, "worktree", wt, "branch", branch)
+	slog.Info("create session", "project", project, "name", name, "agent", agent, "worktree", wt, "branch", existingBranch)
 
 	if proj.IsPlain() {
 		if err := os.MkdirAll(wt, 0o755); err != nil {
@@ -87,14 +132,26 @@ func (a *App) CreateSession(project, name, agent string) (session.Session, strin
 			return session.Session{}, "", fmt.Errorf("mkdir session dir: %w", err)
 		}
 	} else {
-		branch = name
-		if proj.BranchPrefix != "" {
-			branch = proj.BranchPrefix + "/" + name
+		fetchTarget := proj.BaseBranch
+		if existingBranch != "" {
+			branch = existingBranch
+			fetchTarget = existingBranch
+		} else {
+			branch = name
+			if proj.BranchPrefix != "" {
+				branch = proj.BranchPrefix + "/" + name
+			}
 		}
 		if a.Git.HasRemote(proj.Repo, "origin") {
-			_ = a.Git.Fetch(proj.Repo, proj.BaseBranch) // best-effort
+			_ = a.Git.Fetch(proj.Repo, fetchTarget) // best-effort
 		}
-		if err := a.Git.AddWorktree(proj.Repo, wt, branch, proj.BaseBranch); err != nil {
+		var err error
+		if existingBranch != "" {
+			err = a.Git.AddWorktreeExisting(proj.Repo, wt, branch)
+		} else {
+			err = a.Git.AddWorktree(proj.Repo, wt, branch, proj.BaseBranch)
+		}
+		if err != nil {
 			slog.Error("git worktree add failed", "repo", proj.Repo, "path", wt, "branch", branch, "err", err)
 			return session.Session{}, "", fmt.Errorf("git worktree add: %w", err)
 		}
