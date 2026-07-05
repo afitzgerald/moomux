@@ -33,7 +33,7 @@ func (m *Model) renderList(width, height int) string {
 
 func renderRow(s session.Session, st watcher.State, width int) string {
 	dot := dotParked
-	label := "park"
+	label := "parked"
 	switch st {
 	case watcher.Working:
 		dot = dotWorking

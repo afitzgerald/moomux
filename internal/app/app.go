@@ -103,14 +103,17 @@ func (a *App) uniqueNameFromBranch(project, branch string) string {
 	}
 }
 
-func (a *App) CreateSession(project, name, agent, existingBranch string) (session.Session, error) {
+// CreateSession's hint, when non-empty, is a user-facing instruction
+// (e.g. "run: tmux attach -t ...") to show alongside success — it is
+// not an error.
+func (a *App) CreateSession(project, name, agent, existingBranch string) (session.Session, string, error) {
 	proj, ok := a.Cfg.Projects[project]
 	if !ok {
-		return session.Session{}, fmt.Errorf("unknown project %q", project)
+		return session.Session{}, "", fmt.Errorf("unknown project %q", project)
 	}
 	if name == "" {
 		if existingBranch == "" {
-			return session.Session{}, fmt.Errorf("session name required")
+			return session.Session{}, "", fmt.Errorf("session name required")
 		}
 		name = a.uniqueNameFromBranch(project, existingBranch)
 	}
@@ -126,7 +129,7 @@ func (a *App) CreateSession(project, name, agent, existingBranch string) (sessio
 	if proj.IsPlain() {
 		if err := os.MkdirAll(wt, 0o755); err != nil {
 			slog.Error("mkdir session dir failed", "path", wt, "err", err)
-			return session.Session{}, fmt.Errorf("mkdir session dir: %w", err)
+			return session.Session{}, "", fmt.Errorf("mkdir session dir: %w", err)
 		}
 	} else {
 		fetchTarget := proj.BaseBranch
@@ -150,7 +153,7 @@ func (a *App) CreateSession(project, name, agent, existingBranch string) (sessio
 		}
 		if err != nil {
 			slog.Error("git worktree add failed", "repo", proj.Repo, "path", wt, "branch", branch, "err", err)
-			return session.Session{}, fmt.Errorf("git worktree add: %w", err)
+			return session.Session{}, "", fmt.Errorf("git worktree add: %w", err)
 		}
 		slog.Info("worktree added", "path", wt, "branch", branch)
 	}
@@ -163,12 +166,13 @@ func (a *App) CreateSession(project, name, agent, existingBranch string) (sessio
 
 	if err := a.Tmux.NewSession(tmuxName, wt, cmd, name); err != nil {
 		slog.Error("tmux new-session failed", "name", tmuxName, "cwd", wt, "err", err)
-		return session.Session{}, fmt.Errorf("tmux new-session: %w", err)
+		return session.Session{}, "", fmt.Errorf("tmux new-session: %w", err)
 	}
 	slog.Info("tmux session created", "name", tmuxName)
-	if err := a.Terminal.OpenSession(tmuxName, name); err != nil {
+	hint, err := a.Terminal.OpenSession(tmuxName, name)
+	if err != nil {
 		slog.Error("terminal open failed", "tmux_session", tmuxName, "name", name, "err", err)
-		return session.Session{}, fmt.Errorf("terminal open: %w", err)
+		return session.Session{}, "", fmt.Errorf("terminal open: %w", err)
 	}
 	slog.Info("terminal opened", "tmux_session", tmuxName)
 
@@ -185,9 +189,9 @@ func (a *App) CreateSession(project, name, agent, existingBranch string) (sessio
 	}
 	if err := a.Store.Put(s); err != nil {
 		slog.Error("store put failed", "id", s.ID, "err", err)
-		return s, fmt.Errorf("store: %w", err)
+		return s, "", fmt.Errorf("store: %w", err)
 	}
-	return s, nil
+	return s, hint, nil
 }
 
 func (a *App) SetSessionTags(id, ticket, pr string) (session.Session, error) {
@@ -203,16 +207,16 @@ func (a *App) SetSessionTags(id, ticket, pr string) (session.Session, error) {
 	return s, nil
 }
 
-func (a *App) OpenSession(id string) error {
+func (a *App) OpenSession(id string) (string, error) {
 	s, ok := a.Store.Get(id)
 	if !ok {
-		return fmt.Errorf("unknown session %q", id)
+		return "", fmt.Errorf("unknown session %q", id)
 	}
 	has, err := a.Tmux.HasSession(s.TmuxSession)
 	slog.Info("open session", "id", id, "tmux_session", s.TmuxSession, "worktree", s.WorktreePath, "tmux_has_session", has)
 	if err != nil {
 		slog.Error("HasSession error", "id", id, "err", err)
-		return err
+		return "", err
 	}
 	if !has {
 		slog.Info("tmux session absent, recreating", "tmux_session", s.TmuxSession, "cwd", s.WorktreePath)
@@ -222,16 +226,17 @@ func (a *App) OpenSession(id string) error {
 		}
 		if err := a.Tmux.NewSession(s.TmuxSession, s.WorktreePath, cmd, s.Name); err != nil {
 			slog.Error("NewSession failed", "id", id, "tmux_session", s.TmuxSession, "cwd", s.WorktreePath, "err", err)
-			return err
+			return "", err
 		}
 	}
 	a.Tmux.ConfigureTitleTracking(s.TmuxSession, s.Name)
-	if err := a.Terminal.OpenSession(s.TmuxSession, s.Name); err != nil {
+	hint, err := a.Terminal.OpenSession(s.TmuxSession, s.Name)
+	if err != nil {
 		slog.Error("Terminal.OpenSession failed", "id", id, "tmux_session", s.TmuxSession, "name", s.Name, "err", err)
-		return err
+		return "", err
 	}
 	slog.Info("session opened", "id", id)
-	return nil
+	return hint, nil
 }
 
 // TmuxAliveAll returns id→alive for every stored session using a single

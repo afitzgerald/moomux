@@ -18,8 +18,11 @@ import (
 // Backend is everything the TUI calls into. main wires the real impl;
 // tests can supply fakes.
 type Backend interface {
-	CreateSession(project, name, agent, existingBranch string) (session.Session, error)
-	OpenSession(id string) error
+	// CreateSession's hint, when non-empty, is a user-facing instruction
+	// (e.g. "run: tmux attach -t ...") to show alongside success — it is
+	// not an error.
+	CreateSession(project, name, agent, existingBranch string) (s session.Session, hint string, err error)
+	OpenSession(id string) (hint string, err error)
 	DeleteSession(id string) error
 	KillTmux(id string) error
 	SetSessionTags(id, ticket, pr string) (session.Session, error)
@@ -110,6 +113,7 @@ type Model struct {
 	tagForm         tagForm
 	pending         pendingProject
 	flash           string
+	flashKind       string // "info" or "error"
 	flashTime       time.Time
 
 	width, height int
@@ -245,4 +249,19 @@ func listenStatus(ch <-chan watcher.Snapshot) tea.Cmd {
 
 func tickFlash() tea.Cmd {
 	return tea.Tick(2*time.Second, func(t time.Time) tea.Msg { return InfoMsg{When: t} })
+}
+
+const (
+	infoFlashDuration  = 3 * time.Second
+	errorFlashDuration = 8 * time.Second
+)
+
+func (m *Model) setFlash(kind, text string) {
+	m.flash = text
+	m.flashKind = kind
+	m.flashTime = time.Now()
+}
+
+func (m *Model) setError(err error) {
+	m.setFlash("error", err.Error())
 }
