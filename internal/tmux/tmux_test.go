@@ -37,7 +37,10 @@ func TestNewSession(t *testing.T) {
 		{"set-window-option", "-t", "moomux-foo", "automatic-rename", "off"},
 		{"set-option", "-t", "moomux-foo", "set-titles", "on"},
 		{"set-option", "-t", "moomux-foo", "set-titles-string", "#{window_name}"},
-		{"send-keys", "-t", "moomux-foo", "claude", "Enter"},
+		{"set-option", "-t", "moomux-foo", "mouse", "on"},
+		{"split-window", "-h", "-t", "moomux-foo", "-c", "/tmp/wt", "-p", "33"},
+		{"select-pane", "-t", "moomux-foo.0"},
+		{"send-keys", "-t", "moomux-foo.0", "claude", "Enter"},
 	}
 	if !reflect.DeepEqual(fr.calls, want) {
 		t.Fatalf("calls = %v", fr.calls)
@@ -52,7 +55,10 @@ func TestNewSessionNoWindowName(t *testing.T) {
 	}
 	want := [][]string{
 		{"new-session", "-d", "-s", "moomux-foo", "-c", "/tmp/wt"},
-		{"send-keys", "-t", "moomux-foo", "claude", "Enter"},
+		{"set-option", "-t", "moomux-foo", "mouse", "on"},
+		{"split-window", "-h", "-t", "moomux-foo", "-c", "/tmp/wt", "-p", "33"},
+		{"select-pane", "-t", "moomux-foo.0"},
+		{"send-keys", "-t", "moomux-foo.0", "claude", "Enter"},
 	}
 	if !reflect.DeepEqual(fr.calls, want) {
 		t.Fatalf("calls = %v", fr.calls)
@@ -70,6 +76,9 @@ func TestNewSessionNoCmd(t *testing.T) {
 		{"set-window-option", "-t", "moomux-foo", "automatic-rename", "off"},
 		{"set-option", "-t", "moomux-foo", "set-titles", "on"},
 		{"set-option", "-t", "moomux-foo", "set-titles-string", "#{window_name}"},
+		{"set-option", "-t", "moomux-foo", "mouse", "on"},
+		{"split-window", "-h", "-t", "moomux-foo", "-c", "/tmp/wt", "-p", "33"},
+		{"select-pane", "-t", "moomux-foo.0"},
 	}
 	if !reflect.DeepEqual(fr.calls, want) {
 		t.Fatalf("calls = %v", fr.calls)
