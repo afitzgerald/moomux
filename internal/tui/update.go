@@ -140,6 +140,9 @@ func (m *Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = ModeNewForm
 		m.nameInput.SetValue("")
 		m.nameInput.Focus()
+		m.branchInput.SetValue("")
+		m.branchInput.Blur()
+		m.newFormFocus = 0
 		// pre-select the project's default agent
 		proj := m.projects[m.activeProj]
 		defaultAgent := "claude"
@@ -192,6 +195,16 @@ func (m *Model) updateNewForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc":
 		m.mode = ModeList
 		return m, nil
+	case "tab", "shift+tab":
+		m.newFormFocus = (m.newFormFocus + 1) % 2
+		if m.newFormFocus == 0 {
+			m.nameInput.Focus()
+			m.branchInput.Blur()
+		} else {
+			m.nameInput.Blur()
+			m.branchInput.Focus()
+		}
+		return m, nil
 	case "left":
 		m.newFormAgentIdx = (m.newFormAgentIdx - 1 + len(agentChoices)) % len(agentChoices)
 		return m, nil
@@ -200,21 +213,31 @@ func (m *Model) updateNewForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "enter":
 		name := m.nameInput.Value()
-		if name == "" {
+		branch := m.branchInput.Value()
+		if name == "" && branch == "" {
 			return m, nil
 		}
 		proj := m.projects[m.activeProj]
 		agent := agentChoices[m.newFormAgentIdx]
 		m.mode = ModeList
-		m.flash = "creating " + name + "…"
+		label := name
+		if label == "" {
+			label = branch
+		}
+		m.flash = "creating " + label + "…"
 		m.flashTime = time.Now()
 		return m, func() tea.Msg {
-			s, err := m.backend.CreateSession(proj, name, agent)
+			s, err := m.backend.CreateSession(proj, name, agent, branch)
 			if err != nil {
 				return ErrorMsg{Err: err}
 			}
 			return SessionCreatedMsg{Session: s}
 		}
+	}
+	if m.newFormFocus == 1 {
+		var cmd tea.Cmd
+		m.branchInput, cmd = m.branchInput.Update(msg)
+		return m, cmd
 	}
 	var cmd tea.Cmd
 	m.nameInput, cmd = m.nameInput.Update(msg)

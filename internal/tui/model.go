@@ -18,7 +18,7 @@ import (
 // Backend is everything the TUI calls into. main wires the real impl;
 // tests can supply fakes.
 type Backend interface {
-	CreateSession(project, name, agent string) (session.Session, error)
+	CreateSession(project, name, agent, existingBranch string) (session.Session, error)
 	OpenSession(id string) error
 	DeleteSession(id string) error
 	KillTmux(id string) error
@@ -103,6 +103,8 @@ type Model struct {
 
 	mode            Mode
 	nameInput       textinput.Model
+	branchInput     textinput.Model
+	newFormFocus    int // 0=nameInput, 1=branchInput
 	newFormAgentIdx int // agent selector in the new-session form
 	projForm        projectForm
 	tagForm         tagForm
@@ -115,20 +117,26 @@ type Model struct {
 
 func New(cfg *config.Config, backend Backend, statusCh <-chan watcher.Snapshot, cancel context.CancelFunc) *Model {
 	ti := textinput.New()
-	ti.Placeholder = "session name (e.g. hash-password)"
+	ti.Placeholder = "session name (optional if branch set)"
 	ti.CharLimit = 64
 	ti.Width = 40
 
+	bi := textinput.New()
+	bi.Placeholder = "existing branch (optional)"
+	bi.CharLimit = 128
+	bi.Width = 40
+
 	m := &Model{
-		cfg:        cfg,
-		backend:    backend,
-		keys:       DefaultKeyMap(),
-		states:     map[string]watcher.State{},
-		tmuxAlive:  map[string]bool{},
-		prompts:    map[string]string{},
-		statusCh:   statusCh,
-		cancelPoll: cancel,
-		nameInput:  ti,
+		cfg:         cfg,
+		backend:     backend,
+		keys:        DefaultKeyMap(),
+		states:      map[string]watcher.State{},
+		tmuxAlive:   map[string]bool{},
+		prompts:     map[string]string{},
+		statusCh:    statusCh,
+		cancelPoll:  cancel,
+		nameInput:   ti,
+		branchInput: bi,
 	}
 	for name := range cfg.Projects {
 		m.projects = append(m.projects, name)
