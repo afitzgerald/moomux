@@ -15,12 +15,12 @@ type fakeBackend struct {
 	sessions []session.Session
 }
 
-func (f *fakeBackend) CreateSession(project, name, agent string) (session.Session, error) {
-	return session.Session{}, nil
+func (f *fakeBackend) CreateSession(project, name, agent, existingBranch string) (session.Session, string, error) {
+	return session.Session{}, "", nil
 }
-func (f *fakeBackend) OpenSession(id string) error   { return nil }
-func (f *fakeBackend) DeleteSession(id string) error { return nil }
-func (f *fakeBackend) KillTmux(id string) error      { return nil }
+func (f *fakeBackend) OpenSession(id string) (string, error) { return "", nil }
+func (f *fakeBackend) DeleteSession(id string) error         { return nil }
+func (f *fakeBackend) KillTmux(id string) error              { return nil }
 func (f *fakeBackend) SetSessionTags(id, ticket, pr string) (session.Session, error) {
 	return session.Session{}, nil
 }

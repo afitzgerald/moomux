@@ -30,14 +30,33 @@ func (m *Model) renderList(width, height int) (string, []linkHit) {
 		b.WriteString(muteStyle.Render("  no sessions — press n to create"))
 		return lipgloss.NewStyle().Width(width).Height(height).Render(b.String()), nil
 	}
+	visible := height - 2 // header + blank line above
+	if visible < 1 {
+		visible = 1
+	}
+	start := 0
+	if len(m.sessions) > visible {
+		start = m.cursor - visible/2
+		if start < 0 {
+			start = 0
+		}
+		if max := len(m.sessions) - visible; start > max {
+			start = max
+		}
+	}
+	end := start + visible
+	if end > len(m.sessions) {
+		end = len(m.sessions)
+	}
 	var hits []linkHit
-	for i, s := range m.sessions {
+	for i := start; i < end; i++ {
+		s := m.sessions[i]
 		row, rowHits := renderRow(s, m.effectiveState(s), width-4)
 		for _, h := range rowHits {
 			h.sessionID = s.ID
 			// +2 lines for the "SESSIONS" title and blank line above;
 			// +1 column for the row style's own left padding.
-			h.line = 2 + i
+			h.line = 2 + (i - start)
 			h.col0++
 			h.col1++
 			hits = append(hits, h)
@@ -50,7 +69,7 @@ func (m *Model) renderList(width, height int) (string, []linkHit) {
 		b.WriteString(row)
 		b.WriteString("\n")
 	}
-	return lipgloss.NewStyle().Width(width).Height(height).Render(b.String()), hits
+	return lipgloss.NewStyle().Width(width).Height(height).MaxHeight(height).Render(b.String()), hits
 }
 
 func renderRow(s session.Session, st watcher.State, width int) (string, []linkHit) {
